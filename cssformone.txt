@@ -1,386 +1,259 @@
 using System.Data.OleDb;
 
-			
 		OleDbConnection konekcija;
         OleDbCommand komanda, komanda2;
         OleDbDataAdapter adapter;
-        DataTable tabela;
-        OleDbDataReader rider; 
-
+        DataTable tabela;		
 		
-		//relative paths of base linking
-
+			//relative paths of base linking
+			
+			
 			string putanja = Environment.CurrentDirectory;
             string[] putanjaBaze = putanja.Split(new string[] { "bin" }, StringSplitOptions.None);
             AppDomain.CurrentDomain.SetData("DataDirectory", putanjaBaze[0]);
-            konekcija = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=|DataDirectory|\DVDKolekcija.accdb");
-		
-		
-		//data entry in the database
+            konekcija = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=|DataDirectory|\DVDkolekcija.accdb");
 
-		 try
+
+		
+			//data entry in the database
+			
+			 string sifra = tbSifra.Text;
+            string ime = tbIme.Text;
+            string email = tbSifra.Text;
+            try
             {
-                konekcija.Open();
-                if(textBox1.Text=="" || textBox2.Text =="" || textBox3.Text=="")
+                if (tbSifra.Text == "" || tbIme.Text=="")
                 {
-                    MessageBox.Show("Polja sifra, ime i prezime su obavezna polja! Morate ih popuniti!");
-                    textBox1.Text ="";
-                    textBox2.Text = "";
-                    textBox3.Text = "";
-                    textBox4.Text = "";
-                    textBox5.Text = "";
+                    MessageBox.Show("Sifra i ime su obavezna polja, popunite ih!");
+                    tbSifra.Focus();
                 }
-                else
+                else if(tbEmail.Text=="")
                 {
-                    komanda = new OleDbCommand("Insert into Glumac(GlumacID, Ime, Prezime, DatumRodjenja, MestoRodjenja) values (@GlumacID, @Ime, @Prezime, @DatumRodjenja, @MestoRodjenja)", konekcija);
-                    komanda.Parameters.AddWithValue("@GlumacID", textBox1.Text);
-                    komanda.Parameters.AddWithValue("@Ime", textBox2.Text);
-                    komanda.Parameters.AddWithValue("@Prezime", textBox3.Text);
-                    if(textBox4.Text!="")
-                    {
-                        DateTime datum = Convert.ToDateTime(textBox4.Text);
-                        komanda.Parameters.AddWithValue("@DatumRodjenja", datum);
-                    }
-                    else
-                    {
-                        komanda.Parameters.AddWithValue("@DatumRodjenja", DBNull.Value);
-                    }
-                    if (textBox5.Text != "")
-                    {
-                        komanda.Parameters.AddWithValue("@MestoRodjenja", textBox5.Text);
-                    }
-                    else
-                    {
-                        komanda.Parameters.AddWithValue("@MestoRodjenja", DBNull.Value);
-                    }
-                    try
-                    {
-                        komanda.ExecuteNonQuery();
-                        MessageBox.Show("Uspesan upis!");
-                    }
-                    catch
-                    {
-                        MessageBox.Show("Doslo je do greske pri upisu");
-                    }
+                    OleDbCommand cmd = new OleDbCommand();
+                    cmd.CommandType = CommandType.Text;
+                    cmd.CommandText = "insert into Producent (ProducentID,Ime) values ('" + sifra + "', '" + ime + "')";
+                    cmd.Connection = konekcija;
+                    konekcija.Open();
+                    cmd.ExecuteNonQuery();
+                    System.Windows.Forms.MessageBox.Show("Uspesno upisano u tabelu", "Informacija", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     konekcija.Close();
-                    textBox1.Text = "";
-                    textBox2.Text = "";
-                    textBox3.Text = "";
-                    textBox4.Text = "";
-                    textBox5.Text = "";
-                }
-                konekcija.Open();
-                komanda = new OleDbCommand("Select * from Glumac order by GlumacID", konekcija);
-                OleDbDataReader rider;
-                rider = komanda.ExecuteReader();
-                listView1.Items.Clear();
-                while (rider.Read())
-                {
-                    ListViewItem lv = new ListViewItem(rider[0].ToString());
-                    lv.SubItems.Add(rider[1].ToString());
-                    lv.SubItems.Add(rider[2].ToString());
-                    if (rider[3].ToString() != "")
-                    {
+                    //listView1.Clear();
+                    tbSifra.Text = tbIme.Text = tbSifra.Text = "";
 
-                        lv.SubItems.Add(Convert.ToDateTime(rider[3].ToString()).ToShortDateString());
-                    }
-                    else
-                    {
-                        lv.SubItems.Add("");
-                    }
-                    if (rider[4].ToString() != "")
-                    {
-                        lv.SubItems.Add(rider[4].ToString());
-                    }
-                    else
-                    {
-                        lv.SubItems.Add("");
-                    }
-                    listView1.Items.Add(lv);
-                }
-                rider.Close();
-                komanda.Dispose();
-                konekcija.Close();
-
-            }
-            catch
-            {
-                MessageBox.Show("Greska pri upisu!");
-                textBox2.Text = "";
-                textBox3.Text = "";
-                textBox4.Text = "";
-                textBox5.Text = "";
-            }
-
-			
-		//deleting data from the database
-
-		if(textBox1.Text!="")
-            {
-                int id = 0;
-                try
-                {
-                    id = Convert.ToInt32(textBox1.Text);
-                }
-                catch
-                {
-                    MessageBox.Show("Sifra mora biti broj! Unesite ponovo");
-                    textBox1.Text = "";
-                }
-                konekcija.Open();
-                komanda = new OleDbCommand("Delete from Glumac where GlumacID="+id, konekcija);
-                if(textBox2.Text!="" && textBox3.Text!="")
-                {
-                    try
-                    {
-                        komanda.ExecuteNonQuery();
-                        MessageBox.Show("Uspesno brisanje!");
-                    }
-                    catch
-                    {
-                        MessageBox.Show("Doslo je do greske pri brisanju!");
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Glumac koji ima ovaj ID ne postoji, unesite ga opet!");
-                    textBox1.Text = "";
-                }
-                konekcija.Close();
-                textBox1.Text = "";
-                textBox2.Text = "";
-                textBox3.Text = "";
-                textBox4.Text = "";
-                textBox5.Text = "";
-                konekcija.Open();
-                komanda = new OleDbCommand("Select * from Glumac order by GlumacID", konekcija);
-                OleDbDataReader rider;
-                rider = komanda.ExecuteReader();
-                listView1.Items.Clear();
-                while (rider.Read())
-                {
-                    ListViewItem lv = new ListViewItem(rider[0].ToString());
-                    lv.SubItems.Add(rider[1].ToString());
-                    lv.SubItems.Add(rider[2].ToString());
-                    if (rider[3].ToString() != "")
-                    {
-
-                        lv.SubItems.Add(Convert.ToDateTime(rider[3].ToString()).ToShortDateString());
-                    }
-                    else
-                    {
-                        lv.SubItems.Add("");
-                    }
-                    if (rider[4].ToString() != "")
-                    {
-                        lv.SubItems.Add(rider[4].ToString());
-                    }
-                    else
-                    {
-                        lv.SubItems.Add("");
-                    }
-                    listView1.Items.Add(lv);
-                }
-                rider.Close();
-                komanda.Dispose();
-            }
-            else
-            {
-                MessageBox.Show("Morate uneti ID glumca kojeg zelite da obrisete!");
-            }
-			
-			
-		//database update in database
-
-		if (textBox1.Text != "" && textBox2.Text!="" && textBox3.Text!="")
-            {
-                konekcija.Open();
-                komanda = new OleDbCommand("Update Glumac set Ime=@ime, Prezime=@prezime, DatumRodjenja=@dr, MestoRodjenja=@mr where GlumacID= @id" , konekcija);
-                try
-                {
-                    
-                    komanda.Parameters.AddWithValue("@ime", textBox2.Text);
-                    komanda.Parameters.AddWithValue("@prezime", textBox3.Text);
-                    if (textBox4.Text != "")
-                    {
-                        DateTime datum = Convert.ToDateTime(textBox4.Text);
-                        komanda.Parameters.AddWithValue("@dr", datum);
-                    }
-                    else
-                    {
-                        komanda.Parameters.AddWithValue("@dr", DBNull.Value);
-                    }
-                    if (textBox5.Text != "")
-                    {
-                        komanda.Parameters.AddWithValue("@mr", textBox5.Text);
-                    }
-                    else
-                    {
-                        komanda.Parameters.AddWithValue("@mr", DBNull.Value);
-                    }
-                    komanda.Parameters.AddWithValue("@id", Convert.ToInt32(textBox1.Text));
-                    komanda.ExecuteNonQuery();
-                    MessageBox.Show("Uspesno azurirano!");
-                    textBox1.Text = "";
-                    textBox2.Text = "";
-                    textBox3.Text = "";
-                    textBox4.Text = "";
-                    textBox5.Text = "";
 
                     konekcija.Open();
-                    komanda = new OleDbCommand("Select * from Glumac order by GlumacID", konekcija);
-                    OleDbDataReader rider;
-                    rider = komanda.ExecuteReader();
+                    komanda = new OleDbCommand("Select * from Producent order by ProducentID ASC", konekcija);
+                    OleDbDataReader r;
+                    r = komanda.ExecuteReader();
                     listView1.Items.Clear();
-                    while (rider.Read())
+                    while (r.Read())
                     {
-                        ListViewItem lv = new ListViewItem(rider[0].ToString());
-                        lv.SubItems.Add(rider[1].ToString());
-                        lv.SubItems.Add(rider[2].ToString());
-                        if (rider[3].ToString() != "")
-                        {
-                            lv.SubItems.Add(Convert.ToDateTime(rider[3].ToString()).ToShortDateString());
-                        }
-                        else
-                        {
-                            lv.SubItems.Add("");
-                        }
-                        if (rider[4].ToString() != "")
-                        {
-                            lv.SubItems.Add(rider[4].ToString());
-                        }
-                        else
-                        {
-                            lv.SubItems.Add("");
-                        }
-                        listView1.Items.Add(lv);
+                        ListViewItem lv = new ListViewItem(r[0].ToString());
+                        lv.SubItems.Add(r[1].ToString());
+                        lv.SubItems.Add(r[2].ToString());
 
+                        listView1.Items.Add(lv);
                     }
-                    rider.Close();
+                    r.Close();
                     komanda.Dispose();
                     konekcija.Close();
                 }
-                catch
+                else
                 {
-                    MessageBox.Show("Doslo je do greske pri azuriranju podataka!");
-                    textBox1.Text = "";
-                    textBox2.Text = "";
-                    textBox3.Text = "";
-                    textBox4.Text = "";
-                    textBox5.Text = "";
-                }
-                konekcija.Close();
-            }
-            else if(textBox1.Text!="" && textBox2.Text=="" )
-            {
-                MessageBox.Show("Uneti ID ne postoji!");
-            }
-            else
-            {
-                MessageBox.Show("Morate prvo uneti ID!");
-            }
-			
-		//textchange
-		
-		   if (textBox1.Text != "")
-                {
-                    int id = 0;
-                    bool ima = false;
-                    try
-                    {
-                        id = Convert.ToInt32(textBox1.Text);
-
-                    }
-                    catch
-                    {
-                        MessageBox.Show("Sifra mora biti broj! Unesite opet");
-                        textBox1.Text = "";
-                    }
-                    komanda = new OleDbCommand("Select * from Glumac", konekcija);
+                    OleDbCommand cmd = new OleDbCommand();
+                    cmd.CommandType = CommandType.Text;
+                    cmd.CommandText = "insert into Producent (ProducentID,Ime,Email) values ('" + sifra + "', '" + ime + "', '" + email + "')";
+                    cmd.Connection = konekcija;
                     konekcija.Open();
-                    
-                    rider = komanda.ExecuteReader();
-                    while(rider.Read())
-                    {
-                        if(id==Convert.ToInt32(rider[0].ToString()))
-                        {
-                            ima = true;
-                            break;
-                        }
-                    }
-                    if(ima)
-                    {
-                        textBox2.Text = rider[1].ToString();
-                        textBox3.Text = rider[2].ToString();
-                    if (rider[3].ToString() != "")
-                    {
-                        DateTime datum = Convert.ToDateTime(rider[3].ToString());
-                        textBox4.Text = datum.ToShortDateString();
-                    }
-                    else
-                    {
-                        textBox4.Text = "";
-                    }
+                    cmd.ExecuteNonQuery();
+                    System.Windows.Forms.MessageBox.Show("Uspesno upisano u tabelu", "Informacija", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    konekcija.Close();
+                    //listView1.Clear();
+                    tbSifra.Text = tbIme.Text = tbSifra.Text = "";
 
-                    if (rider[4].ToString() != "")
-                    {
-                        textBox5.Text = rider[4].ToString();
-                    }
-                    else
-                    {
-                        textBox5.Text = "";
-                    }
-                }
-                    else
-                    {
-                        textBox2.Text = "";
-                        textBox3.Text = "";
-                        textBox4.Text = "";
-                        textBox5.Text = "";
 
+                    konekcija.Open();
+                    komanda = new OleDbCommand("Select * from Producent order by ProducentID ASC", konekcija);
+                    OleDbDataReader r;
+                    r = komanda.ExecuteReader();
+                    listView1.Items.Clear();
+                    while (r.Read())
+                    {
+                        ListViewItem lv = new ListViewItem(r[0].ToString());
+                        lv.SubItems.Add(r[1].ToString());
+                        lv.SubItems.Add(r[2].ToString());
+
+                        listView1.Items.Add(lv);
                     }
+                    r.Close();
+                    komanda.Dispose();
                     konekcija.Close();
 
                 }
-                else
-                {
-                    textBox2.Text = "";
-                    textBox3.Text = "";
-                    textBox4.Text = "";
-                    textBox5.Text = "";
-                }
-            
-		//fill out the listbox data
-		
-		 konekcija.Open();
-            komanda = new OleDbCommand("Select * from Glumac order by GlumacID", konekcija);
-            OleDbDataReader rider;
-            rider = komanda.ExecuteReader();
-            listView1.Items.Clear();
-            while (rider.Read())
-            {
-                ListViewItem lv = new ListViewItem(rider[0].ToString());
-                lv.SubItems.Add(rider[1].ToString());
-                lv.SubItems.Add(rider[2].ToString());
-                if (rider[3].ToString() != "")
-                {
-                    lv.SubItems.Add(Convert.ToDateTime(rider[3].ToString()).ToShortDateString());
-                }
-                else
-                {
-                    lv.SubItems.Add("");
-                }
-                if (rider[4].ToString() != "")
-                {
-                    lv.SubItems.Add(rider[4].ToString());
-                }
-                else
-                {
-                    lv.SubItems.Add("");
-                }
-                listView1.Items.Add(lv);
-
             }
-            rider.Close();
+            catch
+            {
+                MessageBox.Show("Uneta sifra postoji, unesite drugu!");
+                tbSifra.Clear();
+                tbSifra.Focus();
+            }
+			
+			
+			//deleting data from the database
+			
+			 try { 
+            bool pom = false;
+            konekcija.Open();
+            komanda = new OleDbCommand("Select * from Producent", konekcija);
+            komanda2 = new OleDbCommand("Select ProducentID from Producent", konekcija);
+            adapter = new OleDbDataAdapter(komanda);
+            tabela = new DataTable();
+            adapter.Fill(tabela);
+            OleDbDataReader r;
+
+            r = komanda2.ExecuteReader();
+
+            int i = Convert.ToInt32(tbSifra.Text);
+
+            for (int j = 0; j < tabela.Rows.Count; j++)
+            {
+                r.Read();
+                if (i == Int32.Parse(r[0].ToString()))
+                    pom = true;
+            }
+
+            if (!pom)
+            {
+                MessageBox.Show("Unesite novi ID, uneti ne postoji u tabeli!", "Greska", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                tbSifra.Clear();
+            }
+            else
+            {
+                i++;
+                string del = "DELETE * FROM Producent WHERE ProducentID=@id";
+                komanda = new OleDbCommand(del, konekcija);
+                komanda.Parameters.AddWithValue("@id", tbSifra.Text);
+
+                try
+                {
+                    komanda.ExecuteNonQuery();
+                    MessageBox.Show("Stavka je uspesno obrisana!", "Informacija", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch
+                {
+                    MessageBox.Show("Greska pri brisanju!", "Greska", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                tbSifra.Clear();
+            }
+            konekcija.Close();
+            konekcija.Open();
+            komanda = new OleDbCommand("Select * from Producent order by ProducentID ASC", konekcija);
+            OleDbDataReader rd;
+            rd = komanda.ExecuteReader();
+            listView1.Items.Clear();
+            while (rd.Read())
+            {
+                ListViewItem lv = new ListViewItem(rd[0].ToString());
+                lv.SubItems.Add(rd[1].ToString());
+                lv.SubItems.Add(rd[2].ToString());
+
+                listView1.Items.Add(lv);
+            }
+            rd.Close();
             komanda.Dispose();
             konekcija.Close();
+            tbSifra.Text = tbIme.Text = tbSifra.Text = "";
+            }
+            catch
+            {
+                MessageBox.Show("Popunite polje pod nazivom Sifra!");
+                tbSifra.Focus();
+            }
+			
+			//database update in database
+			
+			  konekcija.Open();
+            string kom = "Update Producent set [Ime] = @ime, [Email] = @email where [ProducentID] =  @ID";
+            komanda = new OleDbCommand(kom, konekcija);
+            try
+            {
+                komanda.Parameters.AddWithValue("@ime", tbIme.Text);
+                komanda.Parameters.AddWithValue("@email", tbEmail.Text);
+                komanda.Parameters.AddWithValue("@ID", Convert.ToInt32(tbSifra.Text));
+                MessageBox.Show("Uspesno azurirano!", "Informacija", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                komanda.ExecuteNonQuery();
+
+            }
+            catch (Exception ex1)
+            {
+                MessageBox.Show(ex1.ToString(), "Neuspelo!");
+            }
+            konekcija.Close();
+
+
+            konekcija.Open();
+            komanda = new OleDbCommand("Select * from Producent order by ProducentID ASC", konekcija);
+            OleDbDataReader r;
+            r = komanda.ExecuteReader();
+            listView1.Items.Clear();
+            while (r.Read())
+            {
+                ListViewItem lv = new ListViewItem(r[0].ToString());
+                lv.SubItems.Add(r[1].ToString());
+                lv.SubItems.Add(r[2].ToString());
+
+                listView1.Items.Add(lv);
+            }
+            r.Close();
+            komanda.Dispose();
+            konekcija.Close();
+            tbSifra.Text = tbIme.Text = tbSifra.Text = "";
+			
+			//textchange
+			
+			 try
+            { 
+            if (tbSifra.Text != "")
+            {
+                konekcija.Open();
+                int sifra = Convert.ToInt32(tbSifra.Text);
+                OleDbCommand komanda = new OleDbCommand("SELECT * FROM Producent where ProducentID=" + sifra, konekcija);
+                OleDbDataReader readerNaziv = komanda.ExecuteReader();
+                readerNaziv.Read();
+                tbIme.Text = readerNaziv[1].ToString();
+                tbEmail.Text = readerNaziv[2].ToString();
+            }
+            else
+            {
+                tbSifra.Clear(); tbIme.Clear(); tbEmail.Clear();
+            }
+            }
+            catch
+            {
+                tbIme.Clear(); tbEmail.Clear();
+                MessageBox.Show("Ne postoji, ali ga mozete uneti!");
+            }
+            konekcija.Close();
+			
+			//loading the form
+			
+			konekcija.Open();
+            komanda = new OleDbCommand("Select * from Producent order by ProducentID ASC", konekcija);
+            OleDbDataReader r;
+            r = komanda.ExecuteReader();
+            listView1.Items.Clear();
+            while (r.Read())
+            {
+                ListViewItem lv = new ListViewItem(r[0].ToString());
+                lv.SubItems.Add(r[1].ToString());
+                lv.SubItems.Add(r[2].ToString());
+
+                listView1.Items.Add(lv);
+            }
+            r.Close();
+            komanda.Dispose();
+            konekcija.Close();
+			
+			
+	
