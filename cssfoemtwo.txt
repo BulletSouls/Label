@@ -1,0 +1,107 @@
+using System.Data.OleDb;
+
+
+		OleDbConnection konekcija;
+        OleDbCommand komanda;
+        OleDbDataReader reader;
+        Bitmap DrawArea;
+        Bitmap DrawAreaMap;
+		
+		//relative paths of base linking
+	
+			string putanja = Environment.CurrentDirectory;
+            string[] putanjaBaze = putanja.Split(new string[] { "bin" }, StringSplitOptions.None);
+            AppDomain.CurrentDomain.SetData("DataDirectory", putanjaBaze[0]);
+            konekcija = new OleDbConnection(@"Provider=Microsoft.Jet.OLEDB.4.0;Data Source=|DataDirectory|\B10Antikviteti.mdb");
+            DrawArea = new Bitmap(pictureBox1.Size.Width, pictureBox1.Size.Height);
+			
+		
+		
+		//loading the main form
+		
+			Graphics g;
+            g = Graphics.FromImage(DrawArea);
+            Pen olovka = new Pen(Color.Navy, 2);
+            g.DrawRectangle(olovka, 2, 2, pictureBox1.Width - 4, pictureBox1.Height - 4);
+            g.DrawLine(olovka, (pictureBox1.Width) / 2 + 2, 2, (pictureBox1.Width) / 2 + 2, pictureBox1.Height - 2);
+            g.DrawLine(olovka, 2, (pictureBox1.Height) / 2 + 2, pictureBox1.Width - 2, (pictureBox1.Height) / 2 + 2);
+            pictureBox1.InitialImage = DrawArea;
+            DrawAreaMap = DrawArea;
+            pictureBox1.Image = pictureBox1.InitialImage;
+            g.Dispose();
+		
+		//view database data
+		
+			string cmd = "SELECT Lokalitet.Naziv, Lokalitet.KoordinateSirina,Lokalitet.KoordinateDuzina FROM Tip_Antikviteta INNER JOIN(Period INNER JOIN (Lokalitet INNER JOIN Antikvitet ON Lokalitet.LokalitetID = Antikvitet.LokalitetID) ON Period.PeriodID = Antikvitet.PeriodID) ON Tip_Antikviteta.TipAntikvitetaID = Antikvitet.TipAntikvitetaID WHERE Tip_Antikviteta.Tip = @a";
+            konekcija.Open();
+            komanda = new OleDbCommand(cmd, konekcija);
+            komanda.Parameters.AddWithValue("@a", tbNaziv.Text);
+            try
+            {
+                reader = komanda.ExecuteReader();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            while (true)
+            {
+                try
+                {
+                    reader.Read();
+                    dataGridView1.Rows.Add(reader[0].ToString(), reader[1].ToString(), reader[2].ToString());
+                }
+                catch (Exception ex)
+                {
+
+                    break;
+                }
+            }
+            konekcija.Close();
+			
+		//drawing data from listview
+		
+			DrawArea = null;
+            DrawArea = new Bitmap(pictureBox1.Size.Width, pictureBox1.Size.Height);
+
+            Graphics g;
+            g = Graphics.FromImage(DrawArea);
+            float sirina;
+            float duzina;
+            float centarX = (float)((pictureBox1.Width / 2) - 0.5);
+            float centarY = (float)((pictureBox1.Height / 2) - 0.5);
+            int rbr;
+            try
+            {
+                rbr = dataGridView1.SelectedCells[0].RowIndex;
+            }
+            catch
+            {
+                MessageBox.Show("Morate selektovati red!", "Greska!");
+                return;
+            }
+            if (!dataGridView1.Rows[rbr].IsNewRow)
+            {
+                duzina = centarX + float.Parse(dataGridView1.Rows[rbr].Cells[1].Value.ToString());
+                sirina = centarY - float.Parse(dataGridView1.Rows[rbr].Cells[2].Value.ToString());
+            }
+            else
+            {
+                MessageBox.Show("Selektovani red ne sme biti prazan!", "Greska!");
+                return;
+            }
+
+
+
+            Pen mypen = new Pen(Color.Navy, 2);
+
+            g.DrawRectangle(mypen, 2, 2, pictureBox1.Width - 4, pictureBox1.Height - 4);
+            g.DrawLine(mypen, (pictureBox1.Width) / 2 + 2, 2, (pictureBox1.Width) / 2 + 2, pictureBox1.Height - 2);
+            g.DrawLine(mypen, 2, (pictureBox1.Height) / 2 + 2, pictureBox1.Width - 2, (pictureBox1.Height) / 2 + 2);
+            pictureBox1.Image = DrawArea;
+
+            mypen = new Pen(Color.Red, 4);
+
+            g.DrawEllipse(mypen, duzina, sirina, 4, 4);
+            pictureBox1.Image = DrawArea;
+            g.Dispose();
