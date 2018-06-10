@@ -1,0 +1,55 @@
+using System.Data.OleDb;
+
+
+		OleDbConnection konekcija;
+        OleDbCommand komanda;
+        OleDbDataReader rider;
+		
+		
+		//relative paths of base linking
+
+			string putanja = Environment.CurrentDirectory;
+            string[] putanjaBaze = putanja.Split(new string[] { "bin" }, StringSplitOptions.None);
+            AppDomain.CurrentDomain.SetData("DataDirectory", putanjaBaze[0]);
+            konekcija = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=|DataDirectory|\DVDkolekcija.accdb");
+			
+			
+		//page load
+			konekcija.Open();
+            komanda = new OleDbCommand("Select * from Grad order by Grad ASC", konekcija);
+            rider = komanda.ExecuteReader();
+            while(rider.Read())
+            {
+                comboBox1.Items.Add(rider[1].ToString());
+            }
+            konekcija.Close();
+		
+		//presentation of subfolders in the database
+		
+			listView1.Items.Clear();
+            konekcija.Open();
+            string q1 = "select Igrac.Ime, Igrac.Prezime, Klub.NazivKluba ";
+            string q2 = "FROM (((Igrac INNER JOIN Grad ON Igrac.GradID=Grad.GradID) INNER JOIN Pozicija_Igraca ON Igrac.PozicijaID=Pozicija_Igraca.PozicijaID) INNER JOIN Klub ON Igrac.KlubID=Klub.KlubID) ";
+            string q3 = "where Grad.Grad=@gr AND Pozicija_Igraca.Naziv=@pr";
+            string q4 = " ORDER BY Igrac.Ime, Igrac.Prezime, Klub.NazivKluba DESC";
+            komanda = new OleDbCommand(q1 + q2 + q3 + q4, konekcija);
+            komanda.Parameters.AddWithValue("@gr", comboBox1.Text);
+            komanda.Parameters.AddWithValue("@pr", textBox1.Text);
+            try
+            {
+               rider = komanda.ExecuteReader();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+          
+            while(rider.Read())
+            {
+                string[] stavka = { rider[0].ToString(), rider[1].ToString(), rider[2].ToString() };
+                ListViewItem lv = new ListViewItem(stavka);
+                listView1.Items.Add(lv);
+            }
+            konekcija.Close();
+            comboBox1.Text = "";
+            textBox1.Text = "";
