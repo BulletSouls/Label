@@ -1,0 +1,150 @@
+using System.Data.OleDb;
+
+
+		OleDbConnection konekcija;
+        OleDbCommand komanda;
+        OleDbDataReader rider;
+		
+		//relative paths of base linking
+
+			string putanja = Environment.CurrentDirectory;
+            string[] putanjaBaze = putanja.Split(new string[] { "bin" }, StringSplitOptions.None);
+            AppDomain.CurrentDomain.SetData("DataDirectory", putanjaBaze[0]);
+            konekcija = new OleDbConnection(@"Provider=Microsoft.Jet.OLEDB.4.0;Data Source=|DataDirectory|\B10Antikviteti.mdb");
+
+		//data entry in the database
+
+		  if (textBox1.Text != "" && textBox2.Text != "" && Convert.ToInt32(textBox1.Text) > 0)
+            {
+                konekcija.Open();
+                komanda = new OleDbCommand("Insert into Tip_Antikviteta(TipAntikvitetaID, Tip) values (@TipAntikvitetaID, @Tip)", konekcija);
+                komanda.Parameters.AddWithValue("@TipAntikvitetaID", Convert.ToInt32(textBox1.Text));
+                komanda.Parameters.AddWithValue("@Tip", textBox2.Text);
+                try
+                {
+                    komanda.ExecuteNonQuery();
+                    MessageBox.Show("Uspesan upis!");
+                }
+                catch
+                {
+                    MessageBox.Show("Doslo je do greske pri upisu!");
+                }
+                konekcija.Close();
+                textBox1.Text = "";
+                textBox2.Text = "";
+            }
+            else
+                MessageBox.Show("Popunite sva obavezna polja i sifra mora biti veca od 0!");
+		
+		//deleting data from the database
+		
+		if(textBox1.Text!="")
+            {
+                int id = 0;
+                try
+                {
+                    id = Convert.ToInt32(textBox1.Text);
+                }
+                catch
+                {
+                    MessageBox.Show("Sifra mora biti broj! Unesite ponovo!");
+                    textBox1.Text = "";
+                }
+                komanda = new OleDbCommand("DELETE FROM Tip_Antikviteta Where TipAntikvitetaID=" + id, konekcija);
+                konekcija.Open();
+                if (textBox2.Text != "")
+                {
+                    try
+                    {
+                        komanda.ExecuteNonQuery();
+                        MessageBox.Show("Uspesno brisanje!");
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Doslo je do greske pri brisanju!");
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Uneta sifra ne postoji u bazi!");
+                }
+                konekcija.Close();
+                textBox1.Text = "";
+                textBox2.Text = "";
+            }
+            else
+            {
+                MessageBox.Show("Upisite sifru tipa koji hocete da obrisete!");
+            }
+		
+	    
+		//database update in database
+		
+		if(textBox2.Text=="" && textBox1.Text!="")
+            {
+                MessageBox.Show("Ne postoji Tip sa ovom sifrom");
+            }
+            else if(textBox1.Text=="" && textBox2.Text=="")
+            {
+                MessageBox.Show("Obavezna je sifra!");
+            }
+            else
+            {
+                komanda = new OleDbCommand("Update Tip_Antikviteta Set Tip=@Tip Where TipAntikvitetaID=" + Convert.ToInt32(textBox1.Text), konekcija);
+                komanda.Parameters.AddWithValue("@Tip", textBox2.Text);
+                konekcija.Open();
+                try
+                {
+                    komanda.ExecuteNonQuery();
+                    MessageBox.Show("Uspesno azuriranje podataka!");
+                }
+                catch
+                {
+                    MessageBox.Show("Doslo je do greske pri azuriranju!");
+                }
+                konekcija.Close();
+                textBox1.Text = "";
+                textBox2.Text = "";
+            }
+	//textchange 
+	
+	 if (textBox1.Text!="")
+            {
+                int id=0;
+                bool ima=false;
+                try
+                {
+                    id = Convert.ToInt32(textBox1.Text);
+                }
+                catch
+                {
+                    MessageBox.Show("Sifra mora biti broj! Unesite ponovo!");
+                    textBox1.Text = "";
+                }
+                komanda = new OleDbCommand("SELECT * From Tip_Antikviteta", konekcija);
+                konekcija.Open();
+                rider = komanda.ExecuteReader();
+                while(rider.Read())
+                {
+                    if(id == Convert.ToInt32(rider[0].ToString()))
+                    {
+                        ima = true;
+                        break;
+                    }
+                }
+
+                if(ima)
+                {
+                    textBox2.Text = rider[1].ToString();
+
+                }
+                else
+                {
+                    textBox2.Text = "";
+                }
+                konekcija.Close();
+            }
+            else
+            {
+                textBox2.Text = "";
+            }
