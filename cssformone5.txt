@@ -1,0 +1,184 @@
+using System.Data.OleDb;
+
+		int br = 0;
+        OleDbConnection konekcija;
+        OleDbCommand komanda;
+        OleDbDataReader rider;
+
+		//relative paths of base linking
+			string putanja = Environment.CurrentDirectory;
+            string[] putanjaBaze = putanja.Split(new string[] { "bin" }, StringSplitOptions.None);
+            AppDomain.CurrentDomain.SetData("DataDirectory", putanjaBaze[0]);
+            konekcija = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=|DataDirectory|\DVDkolekcija.accdb");
+			
+		//button new
+			
+			textBox1.Text = "";
+            textBox2.Text = "";
+            textBox3.Text = "";
+            textBox4.Text = "";
+            textBox5.Text = "";
+            textBox1.Focus();
+			
+			
+		//button previous
+		
+		konekcija.Open();
+            
+            if (textBox1.Text == "")
+            {
+                komanda = new OleDbCommand("Select * from Grad where GradID=1", konekcija);
+                rider = komanda.ExecuteReader();
+                while (rider.Read())
+                {
+                    textBox1.Text = rider[0].ToString();
+                    textBox2.Text = rider[1].ToString();
+                    textBox3.Text = rider[2].ToString();
+                    textBox4.Text = rider[3].ToString();
+                    textBox5.Text = rider[4].ToString();
+                }
+
+            }
+            else
+            {
+                br = Convert.ToInt32(textBox1.Text);
+                int pret = br - 1;
+                if (pret != 0)
+                {
+                    komanda = new OleDbCommand("Select * from Grad where GradID=" + pret, konekcija);
+                    rider = komanda.ExecuteReader();
+                    while (rider.Read())
+                    {
+                        textBox1.Text = rider[0].ToString();
+                        textBox2.Text = rider[1].ToString();
+                        textBox3.Text = rider[2].ToString();
+                        textBox4.Text = rider[3].ToString();
+                        textBox5.Text = rider[4].ToString();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Ne postoji grad u bazi pre prikazanog!");
+                }
+            }
+            konekcija.Close();
+	
+		//button next
+		
+		
+            konekcija.Open();
+
+            if (textBox1.Text == "")
+            {
+                komanda = new OleDbCommand("Select * from Grad where GradID=(select Max(GradID) from Grad)", konekcija);
+                rider = komanda.ExecuteReader();
+
+                while (rider.Read())
+                {
+                    textBox1.Text = rider[0].ToString();
+                    textBox2.Text = rider[1].ToString();
+                    textBox3.Text = rider[2].ToString();
+                    textBox4.Text = rider[3].ToString();
+                    textBox5.Text = rider[4].ToString();
+                }
+
+            }
+            else
+            {
+                bool ima = false;
+                br = Convert.ToInt32(textBox1.Text);
+                int sled = br + 1;
+                komanda = new OleDbCommand("Select * from Grad where GradID=" + sled, konekcija);
+                rider = komanda.ExecuteReader();
+                OleDbCommand komanda2 = new OleDbCommand("select Max(GradID) from Grad", konekcija);
+                int max = (int)komanda2.ExecuteScalar();
+                if (br != max)
+                {
+                    while (rider.Read())
+                    {
+                        textBox1.Text = rider[0].ToString();
+                        textBox2.Text = rider[1].ToString();
+                        textBox3.Text = rider[2].ToString();
+                        textBox4.Text = rider[3].ToString();
+                        textBox5.Text = rider[4].ToString();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Ne postoji grad u bazi posle prikazanog!");
+                }
+	
+			//data entry in the database
+				
+				 konekcija.Open();
+            OleDbCommand komandaMax = new OleDbCommand("Select Max(GradID) from Grad", konekcija);
+            int max = (int)komandaMax.ExecuteScalar();
+            int sled = max + 1;
+            if (textBox1.Text == sled.ToString())
+            {
+                if (textBox1.Text != "" && textBox2.Text != "")
+                {
+
+                    komanda = new OleDbCommand("Insert into Grad(GradID, Grad, PozivniBroj, PostanskiBroj, BrojStanovnika) values (@gradID, @grad, @pozbr, @posbr, @brs)", konekcija);
+                    komanda.Parameters.AddWithValue("@gradID", textBox1.Text);
+                    komanda.Parameters.AddWithValue("@grad", textBox2.Text);
+                    if (textBox3.Text != "")
+                    {
+                        komanda.Parameters.AddWithValue("@pz", textBox3.Text);
+                    }
+                    else
+                    {
+                        komanda.Parameters.AddWithValue("@pz", DBNull.Value);
+                    }
+                    if (textBox4.Text != "")
+                    {
+                        komanda.Parameters.AddWithValue("@ps", textBox4.Text);
+                    }
+                    else
+                    {
+                        komanda.Parameters.AddWithValue("@ps", DBNull.Value);
+                    }
+                    if (textBox5.Text != "")
+                    {
+                        komanda.Parameters.AddWithValue("@brs", textBox5.Text);
+                    }
+                    else
+                    {
+                        komanda.Parameters.AddWithValue("@brs", DBNull.Value);
+                    }
+                    try
+                    {
+                        komanda.ExecuteNonQuery();
+                        MessageBox.Show("Uspesan upis!");
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Doslo je do greske pri upisu");
+                    }
+                    
+                    textBox1.Text = "";
+                    textBox2.Text = "";
+                    textBox3.Text = "";
+                    textBox4.Text = "";
+                    textBox5.Text = "";
+                }
+                else
+                {
+                    MessageBox.Show("Morate popuniti obavezna polja! ");
+                    textBox1.Text = "";
+                    textBox2.Text = "";
+                    textBox3.Text = "";
+                    textBox4.Text = "";
+                    textBox5.Text = "";
+                }
+            }
+            else
+            {
+                MessageBox.Show("GradID je autonumber! Morate uneti sifru:" + sled);
+                textBox1.Text = "";
+                textBox2.Text = "";
+                textBox3.Text = "";
+                textBox4.Text = "";
+                textBox5.Text = "";
+            }
+            konekcija.Close();
