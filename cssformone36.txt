@@ -1,0 +1,202 @@
+
+        OleDbCommand komanda;
+        OleDbConnection con,konekcija;
+        OleDbDataReader reader;
+        OleDbDataAdapter adapter;
+        DataTable tabela;
+ 
+            string putanja = Environment.CurrentDirectory;
+            string[] putanjaBaze = putanja.Split(new string[] { "bin" }, StringSplitOptions.None);
+            AppDomain.CurrentDomain.SetData("DataDirectory", putanjaBaze[0]);
+            con = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=|DataDirectory|\Pecarosi.accdb");
+            konekcija = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=|DataDirectory|\Pecarosi.accdb");
+        
+        private void restartuj()
+        {
+            tbRedniBrojUlova.Clear();
+            MbDatum.Clear();
+            MbVreme.Clear();
+            cbPecaros.Text = "";
+            cbVrstaRIbe.Text = "";
+        }
+        private void restart_i_uvecanje_za_jedan()
+        {
+            string s;
+            int i = Convert.ToInt32(tbRedniBrojUlova.Text) + 1;
+            s = i.ToString();
+            tbRedniBrojUlova.Text = s;
+            MbDatum.Clear();
+            MbVreme.Clear();
+            cbPecaros.Text = "";
+            cbVrstaRIbe.Text = "";
+        
+		}
+		//view data
+            int VrstaID;
+            string koman = "SELECT VrstaID FROM Vrsta_Ribe WHERE Naziv=@Naziv";
+            OleDbCommand cmd = new OleDbCommand(koman, con);
+            cmd.Parameters.AddWithValue("@Naziv", cbVrstaRIbe.Text);
+            con.Open();
+            reader = cmd.ExecuteReader();
+            reader.Read();
+            VrstaID = Int32.Parse(reader[0].ToString());
+            con.Close();
+            if (rbUpis.Checked == true)
+            {
+                string s = cbPecaros.Text;
+                int i = s.IndexOf('-');
+                string pom;
+                pom = s.Substring(0, i);
+                if (cbPecaros.Text == "" || cbVrstaRIbe.Text == "")
+                {
+                    MessageBox.Show("Polja pecaros i Vrsta ribe su obavezna!");
+                }
+                else
+                {
+                    try
+                    {
+                        string datum, vreme, rbUlova;
+                        int pecarosID;
+                        datum = MbDatum.Text;
+                        vreme = MbVreme.Text;
+                        rbUlova = tbRedniBrojUlova.Text;
+                        pecarosID = Convert.ToInt32(pom);
+                        string kom = "insert into Ulov (PecarosID,RbrUlova,VrstaID,Datum,Vreme) values ('" + pecarosID + "', '" + rbUlova + "', '" + VrstaID.ToString() + "', '" + datum + "', '" + vreme + "')";
+                        komanda = new OleDbCommand(kom, con);
+                        try
+                        {
+                            con.Open();
+                            komanda.ExecuteNonQuery();
+                            MessageBox.Show("Uspesno upisano u bazu!");
+                            con.Close();
+                            restartuj();
+                        }
+                        catch
+                        {
+                            MessageBox.Show("Greska prilikom upisau datoteku, proverite da li su podaci pravilno uneti!");
+                        }
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Greska prilikom upisa u datoteku, proverite da li su svi podaci ispravni!");
+                    }
+                    con.Close();
+                }
+            }
+            else if (rbBrisanje.Checked == true)
+            {
+                string kom = "DELETE * FROM Ulov WHERE PecarosID=@a AND RbrUlova=@b";
+                string s = cbPecaros.Text;
+                int i = s.IndexOf('-');
+                string pom;
+                pom = s.Substring(0, i);
+                komanda = new OleDbCommand(kom, con);
+                komanda.Parameters.AddWithValue("@a", pom);
+                komanda.Parameters.AddWithValue("@b", tbRedniBrojUlova.Text);
+                try
+                {
+                    con.Open();
+                    komanda.ExecuteNonQuery();
+                    MessageBox.Show("Stavka je uspesno obrisana iz baze!");
+                    con.Close();
+                    restartuj();
+                }
+                catch
+                {
+                    MessageBox.Show("ERROR");
+                }
+            }
+            else
+            {
+                MessageBox.Show("Morate izabrati jednu akciju!");
+            }
+        
+
+       //form load
+            con.Open();
+            MessageBox.Show("Baza je uspesno otvorena!");
+            string cmd = "SELECT PecarosID,Ime,Prezime FROM Pecaros ";
+            komanda = new OleDbCommand(cmd, con);
+            komanda.ExecuteNonQuery();
+            reader = komanda.ExecuteReader();
+            string s;
+            while (reader.Read())
+            {
+                s = reader[0] + "-" + reader[1] + " " + reader[2];
+                cbPecaros.Items.Add(s);
+            }
+            con.Close();
+
+            con.Open();
+            string cmd1 = "SELECT Naziv From Vrsta_Ribe ORDER BY Naziv ASC";
+            komanda = new OleDbCommand(cmd1, con);
+            komanda.ExecuteNonQuery();
+            reader = komanda.ExecuteReader();
+            string s1;
+            while (reader.Read())
+            {
+                s1 = reader[0].ToString();
+                cbVrstaRIbe.Items.Add(s1);
+            }
+            con.Close();
+
+        //combobox checked
+          
+		  if (rbBrisanje.Checked == true)
+            {
+                if (cbPecaros.Text != "")
+                {
+                   try
+                    {
+                        con.Open();
+                        string s = cbPecaros.Text;
+                        int i = s.IndexOf('-');
+                        string pom;
+                        pom = s.Substring(0, i);
+                        int sifra = Convert.ToInt32(pom);
+                        OleDbCommand komanda = new OleDbCommand("SELECT * FROM Ulov WHERE PecarosID =@a AND Vreme=(SELECT MAX(Vreme) FROM Ulov WHERE PecarosID =@a AND Datum=(SELECT MAX(Datum) FROM Ulov WHERE PecarosID = @a))", con);
+                        komanda.Parameters.AddWithValue("@a", pom);
+                        OleDbDataReader readerNaziv = komanda.ExecuteReader();
+                        readerNaziv.Read();
+                        tbRedniBrojUlova.Text = readerNaziv[1].ToString();
+                        DateTime d = Convert.ToDateTime(readerNaziv[2].ToString());
+                        MbDatum.Text = d.ToString("MM/dd/yyyy");
+                        DateTime d1 = Convert.ToDateTime(readerNaziv[3].ToString());
+                        MbVreme.Text = d1.ToString("hh/mm");
+                        int vr = Convert.ToInt32(readerNaziv[4].ToString());
+                    konekcija.Open();
+                    string pom1 = "SELECT Naziv FROM Vrsta_Ribe WHERE VrstaID=@vr";
+                        OleDbCommand kom = new OleDbCommand(pom1, con);
+                    kom.Parameters.AddWithValue("@vr", vr.ToString());
+                    kom.ExecuteNonQuery();
+                        reader = kom.ExecuteReader();
+                        reader.Read();
+                        cbVrstaRIbe.Text = reader[0].ToString();
+                        konekcija.Close();
+                        con.Close();
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Nema podataka o selektovanom pecarosu!");
+                    }
+                    con.Close();
+                }
+                else
+                {
+                    restartuj();
+                }
+           
+
+        //radiobutton delete checked
+            restartuj();
+        
+		//radiobutton entry checked
+            con.Open();
+            komanda = new OleDbCommand("SELECT * FROM Ulov WHERE RbrUlova=(SELECT MAX(RbrUlova) FROM Ulov)", con);
+            komanda.ExecuteNonQuery();
+            reader = komanda.ExecuteReader();
+            reader.Read();
+            int max= Convert.ToInt32(reader[1].ToString())+1;
+            tbRedniBrojUlova.Text = max.ToString();
+            con.Close();
+        
