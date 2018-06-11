@@ -1,0 +1,162 @@
+using System.Data.OleDb;
+
+
+		OleDbCommand komanda;
+        OleDbConnection konekcija;
+        OleDbDataAdapter adapter;
+        OleDbDataReader reader;
+        DataTable tabela;
+		
+		
+	//relative paths of base linking
+
+			string putanja = Environment.CurrentDirectory;
+            string[] putanjaBaze = putanja.Split(new string[] { "bin" }, StringSplitOptions.None);
+            AppDomain.CurrentDomain.SetData("DataDirectory", putanjaBaze[0]);
+            konekcija = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=|DataDirectory|\DVDkolekcija.accdb");
+
+	//loading form
+	
+	 upis.Enabled = brisanje.Enabled = tbSifra.Enabled = tbIme.Enabled = tbPrezime.Enabled = false;
+            dtpiker.Enabled = false;
+			
+	//rb entry data
+	
+	 if(rbUpis.Checked==true)
+            {
+                brisanje.Enabled = false;
+                upis.Enabled = tbSifra.Enabled = tbIme.Enabled = tbPrezime.Enabled = true;
+                dtpiker.Enabled = true;
+            }
+            else
+            {
+                upis.Enabled = false;
+                brisanje.Enabled =  true;
+                tbIme.Enabled = tbPrezime.Enabled = false;
+                dtpiker.Enabled = false;
+                tbSifra.Enabled = true;
+                tbSifra.Clear();
+            }
+	//textchange
+	
+	 if(rbBrisanje.Checked==true)
+            {
+                try
+                {
+                    if(tbSifra.Text!="")
+                    {
+                        konekcija.Open();
+                        int sifra = Convert.ToInt32(tbSifra.Text);
+                        komanda = new OleDbCommand("SELECT * FROM AUTOR WHERE AutorID=" + sifra, konekcija);
+                        reader = komanda.ExecuteReader();
+                        reader.Read();
+                        tbIme.Text = reader[1].ToString();
+                        tbPrezime.Text = reader[2].ToString();
+                        string s1 = reader[3].ToString();
+                        dtpiker.Value = Convert.ToDateTime(s1);
+                    }
+                    else
+                    {
+                        tbSifra.Clear();
+                        tbIme.Clear();
+                        tbPrezime.Clear();
+                    }
+                }
+                catch
+                {
+                    tbIme.Clear();
+                    tbPrezime.Clear();
+                    MessageBox.Show("Ne postoji!");
+                }
+                konekcija.Close();
+		
+		//entry data in database
+		
+		 string ime, prezime, ID, dr;
+            ime = tbIme.Text;
+            prezime = tbPrezime.Text;
+            ID = tbSifra.Text;
+            dr = dtpiker.Value.ToShortDateString();
+            DateTime datum = DateTime.Now;
+            int dan = datum.Day;
+            int mesec = datum.Month;
+            int godina = datum.Year;
+            int dan1, mesec1, godina1;
+            dan1 = dtpiker.Value.Day;
+            mesec1 = dtpiker.Value.Month;
+            godina1 = dtpiker.Value.Year;
+            try
+            {
+                if(tbSifra.Text=="" || tbIme.Text=="" || tbPrezime.Text=="")
+                {
+                    MessageBox.Show("Sifra, ime i prezime su obavezna polja, molim vas popunite ih!");
+                    if (tbSifra.Text == "")
+                        tbSifra.Focus();
+                    else if (tbIme.Text == "")
+                        tbIme.Focus();
+                    else
+                        tbPrezime.Focus();
+                }
+                else if(godina1>=2000)
+                {
+                    MessageBox.Show("Pisac mora biti rodjen pre 2000. godine, molim vas promenite datum!");
+                }
+                else if (dan == dan1 && mesec == mesec1 && godina == godina1)
+                {
+                    konekcija.Open();
+                    string cmd = "INSERT INTO AUTOR(AutorID,Ime,Prezime) VALUES ('" + ID + "', '" + ime + "', '" + prezime + "')";
+                    komanda = new OleDbCommand(cmd, konekcija);
+                    komanda.ExecuteNonQuery();
+                    MessageBox.Show("Godina rodjenja nece biti upisana u bazu, jer niste izabrali datum!");
+                    MessageBox.Show("Podaci su uspesno upisani u bazu!");
+                    tbIme.Clear();
+                    tbPrezime.Clear();
+                    tbSifra.Clear();
+                    dtpiker.Value = datum;
+                }
+                else
+                {
+                    konekcija.Open();
+                    string cmd = "INSERT INTO AUTOR(AutorID,Ime,Prezime,DatumRodjenja) VALUES ('" + ID + "', '" + ime + "', '" + prezime + "', '" + dr + "')";
+                    komanda = new OleDbCommand(cmd, konekcija);
+                    komanda.ExecuteNonQuery();
+                    MessageBox.Show("Podaci su uspesno upisani u bazu!");
+                    tbIme.Clear();
+                    tbPrezime.Clear();
+                    tbSifra.Clear();
+                    dtpiker.Value = datum;
+                }
+
+            }
+            catch
+            {
+                MessageBox.Show("Postoji autor sa istom sifrom, molim unesite drugu!");
+                tbSifra.Clear();
+                tbSifra.Focus();
+            }
+            konekcija.Close();
+			
+
+		//deleting data from the database
+
+		 try
+            {
+                konekcija.Open();
+                string del = "DELETE * FROM AUTOR WHERE AutorID=@id";
+                string del1 = "DELETE * FROM AUTOR_IZDANJE WHERE AutorID=@id";
+                komanda = new OleDbCommand(del, konekcija);
+                OleDbCommand komanda3 = new OleDbCommand(del1, konekcija);
+                komanda.Parameters.AddWithValue("@id", tbSifra.Text);
+                komanda3.Parameters.AddWithValue("@id", tbSifra.Text);
+                komanda.ExecuteNonQuery();
+                komanda3.ExecuteNonQuery();
+                MessageBox.Show("Uspesno obrisano iz baze!");
+                tbIme.Clear();
+                tbPrezime.Clear();
+                dtpiker.Value = DateTime.Now;
+            }
+            catch
+            {
+                MessageBox.Show("Greska prilikom brisanje iz baze");
+            }
+            konekcija.Close();
