@@ -1,0 +1,227 @@
+using System.Data.OleDb;
+
+
+		OleDbConnection konekcija;
+        OleDbCommand komanda;
+        OleDbDataAdapter adapter;
+        DataTable tabela;
+        OleDbDataReader rider;
+        int br = 0;
+		
+		
+			//relative paths of base linking
+
+			string putanja = Environment.CurrentDirectory;
+            string[] putanjaBaze = putanja.Split(new string[] { "bin" }, StringSplitOptions.None);
+            AppDomain.CurrentDomain.SetData("DataDirectory", putanjaBaze[0]);
+            konekcija = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=|DataDirectory|\DVDkolekcija.accdb");
+
+			//wiping the data location
+
+			tbAdresa.Text = tbSifra.Text = tbNaziv.Text = tbKapacitet.Text = tbBrUlaza.Text = "";
+            cbGrad.Text = "";
+            tbSifra.Focus();
+			
+			//form load
+			
+			 konekcija.Open();
+            komanda = new OleDbCommand("SELECT Grad.Grad, Stadion.Naziv,Stadion.StadionID,Stadion.Adresa,Stadion.Kapacitet,Stadion.BrojUlaza FROM Grad RIGHT JOIN Stadion ON Grad.GradID = Stadion.GradID ", konekcija);
+            adapter = new OleDbDataAdapter(komanda);
+            tabela = new DataTable();
+            adapter.Fill(tabela);
+            tbSifra.Text = tabela.Rows[0]["StadionID"].ToString();
+            tbNaziv.Text = tabela.Rows[0]["Naziv"].ToString();
+            tbAdresa.Text = tabela.Rows[0]["Adresa"].ToString();
+            tbKapacitet.Text = tabela.Rows[0]["Kapacitet"].ToString();
+            tbBrUlaza.Text = tabela.Rows[0]["BrojUlaza"].ToString();
+            cbGrad.Text = tabela.Rows[0]["Grad"].ToString();
+            konekcija.Close();
+
+            konekcija.Open();
+            OleDbCommand komandaGrad = new OleDbCommand("SELECT Grad FROM Grad order by Grad ASC", konekcija);
+            OleDbDataReader riderGrad = komandaGrad.ExecuteReader();
+            while (riderGrad.Read())
+            {
+                cbGrad.Items.Add(riderGrad[0]);
+            }
+            konekcija.Close();
+			
+			//previous ones
+			konekcija.Open();
+
+            if (tbSifra.Text == "")
+            {
+                komanda = new OleDbCommand("Select * from Stadion where StadionID=(select Min(StadionID) from Stadion)", konekcija);
+                rider = komanda.ExecuteReader();
+                while (rider.Read())
+                {
+                    tbSifra.Text = rider[0].ToString();
+                    tbNaziv.Text = rider[1].ToString();
+                    tbAdresa.Text = rider[2].ToString();
+                    tbKapacitet.Text = rider[3].ToString();
+                    tbBrUlaza.Text = rider[4].ToString();
+                    cbGrad.Text = rider[5].ToString();
+
+                }
+
+            }
+            else
+            {
+                br = Convert.ToInt32(tbSifra.Text);
+                int pret = br - 1;
+                if (pret != 0)
+                {
+                    komanda = new OleDbCommand("Select * from Stadion where StadionID=" + pret, konekcija);
+                    rider = komanda.ExecuteReader();
+                    while (rider.Read())
+                    {
+                        tbSifra.Text = rider[0].ToString();
+                        tbNaziv.Text = rider[1].ToString();
+                        tbAdresa.Text = rider[2].ToString();
+                        tbKapacitet.Text = rider[3].ToString();
+                        tbBrUlaza.Text = rider[4].ToString();
+                        cbGrad.Text = rider[5].ToString();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Ne postoji grad u bazi pre prikazanog!");
+                }
+            }
+            konekcija.Close();
+			
+			//next 
+			 konekcija.Open();
+
+            if (tbSifra.Text == "")
+            {
+                komanda = new OleDbCommand("Select * from Stadion where StadionID=(select Max(StadionID) from Stadion)", konekcija);
+                rider = komanda.ExecuteReader();
+
+                while (rider.Read())
+                {
+                    tbSifra.Text = rider[0].ToString();
+                    tbNaziv.Text = rider[1].ToString();
+                    tbAdresa.Text = rider[2].ToString();
+                    tbKapacitet.Text = rider[3].ToString();
+                    tbBrUlaza.Text = rider[4].ToString();
+                    cbGrad.Text = rider[5].ToString();
+                }
+
+            }
+            else
+            {
+                bool ima = false;
+                br = Convert.ToInt32(tbSifra.Text);
+                int sled = br + 1;
+                komanda = new OleDbCommand("Select * from Stadion where StadionID=" + sled, konekcija);
+                rider = komanda.ExecuteReader();
+                OleDbCommand komanda2 = new OleDbCommand("select Max(StadionID) from Stadion", konekcija);
+                int max = (int)komanda2.ExecuteScalar();
+                if (br != max)
+                {
+                    while (rider.Read())
+                    {
+                        tbSifra.Text = rider[0].ToString();
+                        tbNaziv.Text = rider[1].ToString();
+                        tbAdresa.Text = rider[2].ToString();
+                        tbKapacitet.Text = rider[3].ToString();
+                        tbBrUlaza.Text = rider[4].ToString();
+                        cbGrad.Text = rider[5].ToString();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Ne postoji grad u bazi posle prikazanog!");
+                }
+            }
+
+
+            konekcija.Close();
+			
+			//data entry in the database
+
+			int SID;
+            if (tbSifra.Text != "" && tbNaziv.Text != "" && cbGrad.Text != "")
+            {
+                try
+                {
+                    SID = Int32.Parse(tbSifra.Text);
+                }
+                catch
+                {
+                    MessageBox.Show("Sifra mora biti broj!", "Greska!");
+                    tbSifra.Text = "";
+                    return;
+                }
+                if (SID <= 0)
+                {
+                    MessageBox.Show("Sifra mora biti veca od nula!", "Greska!");
+                    tbSifra.Text = "";
+                    return;
+                }
+                else
+                {
+                    komanda = new OleDbCommand("SELECT StadionID FROM Stadion WHERE StadionID=" + SID, konekcija);
+                    konekcija.Open();
+                    rider = komanda.ExecuteReader();
+                    if (rider.HasRows)
+                    {
+                        MessageBox.Show("Stadion sa ovom sifrom vec postoji u bazi!", "Greska!");
+                        tbSifra.Focus();
+                        tbSifra.Text = "";
+                        konekcija.Close();
+                        return;
+                    }
+                    konekcija.Close();
+                    komanda.CommandText = "SELECT GradID FROM Grad WHERE Grad='" + cbGrad.Text + "';";
+                    konekcija.Open();
+                    rider = komanda.ExecuteReader();
+                    int gID = 0;
+
+                    if (!rider.HasRows)
+                    {
+                        MessageBox.Show("Ovaj grad ne postoji u bazi!", "Greska!");
+                        cbGrad.Text = "";
+                        return;
+                    }
+                    else
+                    {
+                        rider.Read();
+                        gID = Int32.Parse(rider[0].ToString());
+
+                    }
+                    konekcija.Close();
+
+                    komanda.CommandText = "INSERT INTO Stadion (StadionID, Naziv, Adresa, Kapacitet, BrojUlaza, GradID) values (@StadionID, @Naziv, @Adresa, @Kapacitet, @BrojUlaza, @GradID)";
+                    komanda.Parameters.Add("@StadionID", OleDbType.Integer).Value = SID;
+                    komanda.Parameters.Add("@Naziv", OleDbType.VarChar).Value = tbNaziv.Text;
+                    if (tbAdresa.Text == "")
+                        komanda.Parameters.Add("@Adresa", OleDbType.VarChar).Value = DBNull.Value;
+                    else
+                        komanda.Parameters.Add("@Adresa", OleDbType.VarChar).Value = tbAdresa.Text;
+
+                    if (tbKapacitet.Text == "")
+                        komanda.Parameters.Add("@Kapacitet", OleDbType.Integer).Value = DBNull.Value;
+                    else
+                        komanda.Parameters.Add("@Kapacitet", OleDbType.Integer).Value = Int32.Parse(tbKapacitet.Text);
+                    if (tbBrUlaza.Text == "")
+                        komanda.Parameters.Add("@BrojUlaza", OleDbType.Integer).Value = DBNull.Value;
+                    else
+                        komanda.Parameters.Add("@BrojUlaza", OleDbType.Integer).Value = Int32.Parse(tbBrUlaza.Text);
+
+                    komanda.Parameters.Add("@GradID", OleDbType.Integer).Value = gID;
+                    konekcija.Open();
+                    try
+                    {
+                        komanda.ExecuteNonQuery();
+                        MessageBox.Show("Uspesan upis!", "Obavestenje!");
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Doslo je do greske pri upisivanju u bazu!", "Greska!");
+                        konekcija.Close();
+                    }
+                    konekcija.Close();
+
+					

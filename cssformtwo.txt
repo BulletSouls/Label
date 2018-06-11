@@ -1,0 +1,42 @@
+using System.Data.OleDb;
+
+		OleDbConnection konekcija;
+        OleDbCommand komanda;
+        OleDbDataAdapter adapter;
+        DataTable tabela;
+
+			//relative paths of base linking
+
+			string putanja = Environment.CurrentDirectory;
+            string[] putanjaBaze = putanja.Split(new string[] { "bin" }, StringSplitOptions.None);
+            AppDomain.CurrentDomain.SetData("DataDirectory", putanjaBaze[0]);
+            konekcija = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=|DataDirectory|\DVDkolekcija.accdb");
+       
+	   
+			//show data in listbox
+			
+				 string Kapacitet;
+            Kapacitet = textBox1.Text;
+            
+            konekcija.Open();
+            
+
+            OleDbCommand komanda = new OleDbCommand("SELECT Stadion.Naziv, Stadion.BrojUlaza,Klub.Sajt,Stadion.Kapacitet, Klub.NazivKluba FROM Stadion INNER JOIN Klub ON Stadion.StadionID = Klub.StadionID WHERE Stadion.Kapacitet > ?; ", konekcija);
+;
+            komanda.Parameters.Add("?", OleDbType.BSTR).Value = textBox1.Text;
+
+            OleDbDataReader riderSve = komanda.ExecuteReader();
+            int brojac = 0;
+            while (riderSve.Read())
+            {
+                dataGridView1.Rows.Add(riderSve[0], riderSve[1], riderSve[2],riderSve[3], riderSve[4]);
+                brojac++;
+            }
+
+            if (brojac == 0)
+            {
+                MessageBox.Show("Nisu pronadjeni podaci za ovaj upit", "Upozorenje");
+            }
+
+
+            konekcija.Close();
