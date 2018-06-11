@@ -1,0 +1,2 @@
+ALTER TABLE NAGRADJEN 
+ADD CONSTRAINT CHK_NagradjenGod CHECK (Godina_osvajanja>=1923);

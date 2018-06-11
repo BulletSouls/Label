@@ -1,0 +1,6 @@
+CREATE TABLE NAGRADA(
+NagradaID int NOT NULL PRIMARY KEY,
+Naziv VARCHAR(100) NOT NULL,
+GodinaPrveDodele int NOT NULL,
+CONSTRAINT CHK_god CHECK (GodinaPrveDodele>=1923)
+);
