@@ -1,0 +1,14 @@
+Create table Osvojio (
+OsvojioID  INT NOT NULL PRIMARY KEY,
+IgracID INT NOT NULL,
+UtakmicaID INT NOT NULL,
+BrojPostignutihGolova int,
+BrojCrvenihKartona int,
+BrojZutihKartona int,
+BrojNapravljenihFaulova int,
+BrojFaulovaNadNjim int,
+CONSTRAINT FK_IgracevID FOREIGN KEY (IgracID)
+REFERENCES Igrac(IgracID),
+CONSTRAINT FK_UtakmicaID FOREIGN KEY (UtakmicaID)
+REFERENCES Utakmica(UtakmicaID)
+);

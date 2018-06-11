@@ -1,0 +1,4 @@
+Create table Takmicenje (
+TakmicenjeID int primary key,
+Naziv varchar(255)
+);

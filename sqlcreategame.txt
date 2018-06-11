@@ -1,0 +1,14 @@
+Create table Utakmica (
+UtakmicaID  INT NOT NULL PRIMARY KEY,
+KlubDomacinID INT NOT NULL,
+KlubGostID INT NOT NULL,
+Datum Date NOT NULL,
+Vreme TIME NOT NULL,
+TakmicenjeID INT NOT NULL,
+CONSTRAINT FK_KlubDomacinID FOREIGN KEY (KlubDomacinID)
+REFERENCES Klub(KlubID),
+CONSTRAINT FK_KlubGostID FOREIGN KEY (KlubGostID)
+REFERENCES Klub(KlubID),
+CONSTRAINT FK_TakmicenjeID FOREIGN KEY (TakmicenjeID)
+REFERENCES Takmicenje(TakmicenjeID)
+);
