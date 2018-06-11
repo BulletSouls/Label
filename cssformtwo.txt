@@ -1,0 +1,67 @@
+using System.Data.OleDb;
+
+		OleDbConnection konekcija;
+        OleDbCommand komanda;
+        OleDbDataReader rider;
+        int br = 0;
+        int[] brknj = new int[50];
+		
+		
+		//relative paths of base linking
+			string putanja = Environment.CurrentDirectory;
+            string[] putanjaBaze = putanja.Split(new string[] { "bin" }, StringSplitOptions.None);
+            AppDomain.CurrentDomain.SetData("DataDirectory", putanjaBaze[0]);
+            konekcija = new OleDbConnection(@"Provider=Microsoft.Jet.OLEDB.4.0;Data Source=|DataDirectory|\B14KolekcijaKnjiga.mdb");
+
+		//loading form
+		
+			chart1.Series.Clear();
+            chart1.Legends.Clear();
+            checkedListBox1.Items.Clear();
+            try
+            {
+                konekcija.Open();
+                komanda = new OleDbCommand("SELECT KATEGORIJA.KategorijaID, KATEGORIJA.Naziv, Count(*) AS Broj FROM KATEGORIJA INNER JOIN KNJIGA ON KATEGORIJA.KategorijaID=KNJIGA.KategorijaID GROUP BY KATEGORIJA.KategorijaID, KATEGORIJA.Naziv ORDER BY KATEGORIJA.Naziv", konekcija);
+                rider = komanda.ExecuteReader();
+                while(rider.Read())
+                {
+                    checkedListBox1.Items.Add(rider[1]);
+                    brknj[br] = Convert.ToInt32(rider[2].ToString());
+                    br++;
+                }
+                konekcija.Close();
+            }
+            catch(Exception exc)
+            {
+                MessageBox.Show(exc.ToString(), "Neuspelo povezivanje sa bazom!\n)");
+                konekcija.Close();
+            }
+
+		//view data from database
+		
+		int i = 0;
+            chart1.Series.Clear();
+            chart1.Legends.Clear();
+            chart1.Legends.Add("Broj Knjiga");
+            string seriesname = "Broj knjiga";
+            chart1.Series.Add(seriesname);
+            chart1.ChartAreas[0].AxisX.LabelStyle.Angle = -90;
+            for(int j=0;j<br;j++)
+            {
+                if(checkedListBox1.GetItemCheckState(j)==CheckState.Checked)
+                {
+                    chart1.Series[seriesname].Points.AddXY(checkedListBox1.Items[j].ToString(), brknj[j]);
+                    i++;
+                }
+                if(i>3)
+                {
+                    chart1.Series.Clear();
+                    MessageBox.Show("Morate izabrati tacno 3 kategorije!");
+                    break;
+                }
+            }
+            if(i<3)
+            {
+                chart1.Series.Clear();
+                MessageBox.Show("Morate izabrati tacno 3 kategorije!");
+            }
