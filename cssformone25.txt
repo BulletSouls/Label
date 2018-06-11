@@ -1,0 +1,242 @@
+using System.Data.OleDb;
+
+		OleDbConnection konekcija;
+        OleDbCommand komanda;
+        OleDbDataReader rider;
+        
+		
+		void novi()
+        {
+            textBox2.Text = textBox3.Text = textBox4.Text = textBox5.Text = textBox6.Text = "";
+
+            konekcija.Open();
+            komanda = new OleDbCommand("Select * from Profesor where ProfesorID=(select MAX(ProfesorID) from Profesor)", konekcija);
+            rider = komanda.ExecuteReader();
+            while (rider.Read())
+            {
+                int sled = Convert.ToInt32(rider[0].ToString()) + 1;
+                textBox1.Text = sled.ToString();
+            }
+            konekcija.Close();
+            textBox2.Focus();
+        }
+		
+		
+        void popunaLV()
+        {
+            listView1.Items.Clear();
+            string pom;
+            konekcija.Open();
+            komanda = new OleDbCommand("Select * from Profesor", konekcija);
+            rider = komanda.ExecuteReader();
+            while (rider.Read())
+            {
+                pom = rider[0].ToString() + " - ";
+                pom += rider[1].ToString() + " ";
+                pom += rider[2].ToString();
+                listView1.Items.Add(pom);
+            }
+            konekcija.Close();
+        }
+
+
+		//relative paths of base linking
+			string putanja = Environment.CurrentDirectory;
+            string[] putanjaBaze = putanja.Split(new string[] { "bin" }, StringSplitOptions.None);
+            AppDomain.CurrentDomain.SetData("DataDirectory", putanjaBaze[0]);
+            konekcija = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=|DataDirectory|\DVDkolekcija.accdb");
+	
+		//loading form
+		
+		 
+            konekcija.Open();
+            komanda = new OleDbCommand("Select * from Profesor where ProfesorID=(select MAX(ProfesorID) from Profesor)", konekcija);
+            rider = komanda.ExecuteReader();
+            while(rider.Read())
+            {
+                int sled = Convert.ToInt32(rider[0].ToString()) + 1;
+                textBox1.Text = sled.ToString() ;
+            }
+            komanda.Dispose();
+            rider.Close();
+            konekcija.Close();
+            string pom;
+            konekcija.Open();
+            komanda = new OleDbCommand("Select * from Profesor", konekcija);
+            rider = komanda.ExecuteReader();
+            while(rider.Read())
+            {
+                pom = rider[0].ToString()+" - ";
+                pom += rider[1].ToString()+" ";
+                pom += rider[2].ToString();
+                listView1.Items.Add(pom);
+            }
+            konekcija.Close();
+		
+		//new
+		
+			textBox2.Text = textBox3.Text = textBox4.Text = textBox5.Text = textBox6.Text = "";
+
+            konekcija.Open();
+            komanda = new OleDbCommand("Select * from Profesor where ProfesorID=(select MAX(ProfesorID) from Profesor)", konekcija);
+            rider = komanda.ExecuteReader();
+            while (rider.Read())
+            {
+                int sled = Convert.ToInt32(rider[0].ToString()) + 1;
+                textBox1.Text = sled.ToString();
+            }
+            konekcija.Close();
+            textBox2.Focus();
+       
+	   //fill listbox
+			konekcija.Open();
+            int sel = listView1.FocusedItem.Index +1;
+            komanda = new OleDbCommand("Select * from Profesor where ProfesorID=" + sel, konekcija);
+            rider = komanda.ExecuteReader();
+            while(rider.Read())
+            {
+                textBox1.Text = sel.ToString();
+                textBox2.Text = rider[1].ToString();
+                textBox3.Text = rider[2].ToString();
+                if (rider[3].ToString() != "")
+                {
+                    DateTime datum = Convert.ToDateTime(rider[3].ToString());
+                    string dat = datum.ToShortDateString();
+                    textBox4.Text = dat;
+                }
+                else
+                {
+                    textBox4.Text = "";
+                }
+                if (rider[4].ToString() != "")
+                {
+                    textBox5.Text = rider[4].ToString();
+                }
+                else
+                {
+                    textBox5.Text = "";
+                }
+                if (rider[5].ToString() != "")
+                {
+                    textBox6.Text = rider[5].ToString();
+                }
+                else
+                {
+                    textBox6.Text = "";
+                }
+            }
+            konekcija.Close();
+		
+		//data entry in the database
+		
+		 if (textBox1.Text != "" && textBox2.Text != "" && textBox3.Text != "")
+            {
+                konekcija.Open();
+                komanda = new OleDbCommand("Insert into Profesor(ProfesorID, Ime, Prezime, DatumRodjenja, Telefon, Email) values (@id, @ime, @prezime, @dat, @tel, @email) ", konekcija);
+                komanda.Parameters.AddWithValue("@id", Convert.ToInt32(textBox1.Text));
+                komanda.Parameters.AddWithValue("@ime", textBox2.Text);
+                komanda.Parameters.AddWithValue("@prezime", textBox3.Text);
+                if (textBox4.Text != "")
+                {
+                    try
+                    {
+                        DateTime datum = Convert.ToDateTime(textBox4.Text);
+                        komanda.Parameters.AddWithValue("@dat", datum);
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Datum mora biti upisan u formatu datuma!");
+                        textBox4.Text = "";
+                    }
+                }
+                else
+                {
+                    komanda.Parameters.AddWithValue("@dat", DBNull.Value);
+                }
+                if (textBox5.Text != "")
+                {
+                    komanda.Parameters.AddWithValue("@tel", textBox5.Text);
+                }
+                else
+                {
+                    komanda.Parameters.AddWithValue("@tel", DBNull.Value);
+                }
+                if (textBox6.Text != "")
+                {
+                    komanda.Parameters.AddWithValue("@email", textBox6.Text);
+                }
+                else
+                {
+                    komanda.Parameters.AddWithValue("@email", DBNull.Value);
+                }
+
+                try
+                {
+                    komanda.ExecuteNonQuery();
+                    MessageBox.Show("Uspesan upis!");
+                    novi();
+
+                }
+                catch
+                {
+                    MessageBox.Show("Doslo je do greske pri upisu!");
+                    textBox1.Text = textBox2.Text = textBox3.Text = textBox4.Text = textBox5.Text = textBox6.Text = "";
+
+
+                }
+                komanda.Dispose();
+                konekcija.Close();
+
+
+                konekcija.Open();
+                komanda = new OleDbCommand("Select * from Profesor where ProfesorID=(select MAX(ProfesorID) from Profesor)", konekcija);
+                rider = komanda.ExecuteReader();
+                while (rider.Read())
+                {
+                    int sled = Convert.ToInt32(rider[0].ToString()) + 1;
+                    textBox1.Text = sled.ToString();
+                }
+                komanda.Dispose();
+                konekcija.Close();
+                textBox2.Focus();
+                popunaLV();
+            }
+            else
+            {
+                MessageBox.Show("Morate popuniti obavezna polja!");
+                novi();
+            }
+		//database update in database
+		
+		  if (textBox2.Text != "")
+            {
+                konekcija.Open();
+                komanda = new OleDbCommand("Update Profesor set Ime=@ime, Prezime=@prezime, DatumRodjenja= @dat, Telefon=@tel, Email=@email where ProfesorID=@id", konekcija);
+                komanda.Parameters.AddWithValue("@ime", textBox2.Text);
+                komanda.Parameters.AddWithValue("@prezime", textBox3.Text);
+                komanda.Parameters.AddWithValue("@dat", textBox4.Text);
+                komanda.Parameters.AddWithValue("@tel", textBox5.Text);
+                komanda.Parameters.AddWithValue("@email", textBox6.Text);
+                komanda.Parameters.AddWithValue("@id", Convert.ToInt32(textBox1.Text));
+                try
+                {
+                    komanda.ExecuteNonQuery();
+                    MessageBox.Show("Uspesno azurirano!");
+                    textBox1.Text = textBox2.Text = textBox3.Text = textBox4.Text = textBox5.Text = textBox6.Text = "";
+
+                }
+                catch
+                {
+
+                    MessageBox.Show("Doslo je do greske pri azuriranju!");
+                    textBox1.Text = textBox2.Text = textBox3.Text = textBox4.Text = textBox5.Text = textBox6.Text = "";
+                }
+                komanda.Dispose();
+                konekcija.Close();
+                popunaLV();
+            }
+            else
+            {
+                MessageBox.Show("Morate izabrati profesora iz liste da biste mogli da azurirate njegove podatke!");
+            }
+        

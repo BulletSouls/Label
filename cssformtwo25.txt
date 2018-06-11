@@ -1,0 +1,76 @@
+using System.Data.OleDb;
+using System.Windows.Forms.DataVisualization.Charting;
+
+		OleDbCommand komanda;
+        OleDbConnection konekcija;
+        OleDbDataAdapter adapter;
+        OleDbDataReader reader;
+        DataTable tabela;
+		
+		//relative paths of base linking
+		
+			string putanja = Environment.CurrentDirectory;
+            string[] putanjaBaze = putanja.Split(new string[] { "bin" }, StringSplitOptions.None);
+            AppDomain.CurrentDomain.SetData("DataDirectory", putanjaBaze[0]);
+            konekcija = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=|DataDirectory|\DVDkolekcija.accdb");
+		
+		//view data
+			 string mesec = numericUpDown2.Value.ToString();
+            string godina = numericUpDown1.Value.ToString();
+            /*textBox1.Text = mesec;
+            textBox2.Text = godina;*/
+            konekcija.Open();
+            string komandaa = "SELECT Kontakt_Informacije.ProfesorID, Profesor.Ime, Profesor.Prezime, Count(Kontakt_Informacije.ProfesorID) FROM Profesor INNER JOIN Kontakt_Informacije ON Profesor.ProfesorID=Kontakt_Informacije.ProfesorID " +
+"WHERE year(Kontakt_Informacije.DatumKontakta)=2015 AND month(Kontakt_Informacije.DatumKontakta)=1 AND Profesor.Email IS NOT NULL AND (Not(Profesor.Email) = '') " +
+"GROUP BY Kontakt_Informacije.ProfesorID, Profesor.Ime, Profesor.Prezime";
+            komanda = new OleDbCommand(komandaa, konekcija);
+            komanda.Parameters.AddWithValue("@godina", godina);
+            komanda.Parameters.AddWithValue("@mesec", mesec);
+            try
+            {
+                reader = komanda.ExecuteReader();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            if (reader.HasRows)
+            {
+                while (true)
+                {
+                    try
+                    {
+                        reader.Read();
+                        dataGridView1.Rows.Add(reader[1].ToString(), reader[2].ToString(), reader[3].ToString());
+
+
+                    }
+                    catch (Exception ex)
+                    {
+
+                        break;
+                    }
+                }
+            }
+            else
+                MessageBox.Show("Nema poklapanja!", "Obavestenje!");
+            konekcija.Close();
+		
+		//drawing data
+			string series = "Profesori";
+            chart1.Series.Clear();
+            chart1.Legends.Clear();
+            chart1.Series.Add(series);
+            chart1.Series[series].ChartType = SeriesChartType.Pie;
+
+
+            for (int i = 0; i < dataGridView1.Rows.Count - 1; i++)
+            {
+                string prezime = dataGridView1.Rows[i].Cells[1].Value.ToString();
+                int broj = Int32.Parse(dataGridView1.Rows[i].Cells[2].Value.ToString());
+
+
+                chart1.Series[series].Points.AddXY(prezime, broj);
+                chart1.Legends.Add(prezime);
+            }
+      
