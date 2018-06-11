@@ -1,0 +1,189 @@
+
+		OleDbConnection con;
+        OleDbCommand cmd;
+        OleDbDataReader rider;
+
+
+       //relative paths of base linking
+            string putanja = Environment.CurrentDirectory;
+            string[] putanjaBaze = putanja.Split(new string[] { "bin" }, StringSplitOptions.None);
+            AppDomain.CurrentDomain.SetData("DataDirectory", putanjaBaze[0]);
+            con = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=|DataDirectory|\B31Autoplac.accdb");
+        
+
+        private void PopuniLV()
+        {
+            cmd = new OleDbCommand("SELECT * FROM BOJA ORDER BY BojaID ASC", con);
+            con.Open();
+            int i = 0;
+            rider = cmd.ExecuteReader();
+            while (rider.Read())
+            {
+                listView1.Items.Add(rider[0].ToString());
+                listView1.Items[i].SubItems.Add(rider[1].ToString());
+                listView1.Items[i].SubItems.Add(rider[2].ToString());
+                i++;
+            }
+            con.Close();
+        }
+		
+		//loading form
+
+            bIzmena.Enabled = false;
+            bUpis.Enabled = false;
+            bBrisi.Enabled = false;
+            PopuniLV();
+
+		//textchange
+        
+			if (tbSifra.Text != "")
+            {
+                bool ima = false;
+                int id = Int32.Parse(tbSifra.Text);
+                cmd = new OleDbCommand("SELECT * FROM BOJA", con);
+                con.Open();
+                rider = cmd.ExecuteReader();
+                while (rider.Read())
+                {
+                    if (id == Int32.Parse(rider[0].ToString()))
+                    {
+                        ima = true;
+                        break;
+                    }
+                }
+                if (ima)
+                {
+                    tbNaziv.Text = rider[1].ToString();
+                    tbOpis.Text = rider[2].ToString();
+                    bIzmena.Enabled = true;
+                    bUpis.Enabled = false;
+                    bBrisi.Enabled = true;
+                }
+                else
+                {
+                    tbNaziv.Text = "";
+                    tbOpis.Text = "";
+                    bIzmena.Enabled = false;
+                    bUpis.Enabled = true;
+                    bBrisi.Enabled = false;
+                }
+
+                con.Close();
+
+            }
+            else
+            {
+                tbNaziv.Text = "";
+                tbOpis.Text = "";
+                bIzmena.Enabled = false;
+                bUpis.Enabled = false;
+                bBrisi.Enabled = false;
+            }
+		
+		//data entry in the database
+		
+            bool proslo = false;
+            if (tbSifra.Text != "" && tbNaziv.Text != "")
+            {
+                cmd = new OleDbCommand("INSERT INTO BOJA (BojaID, Naziv, Opis) values (@BojaID, @Naziv, @Opis)", con);
+                cmd.Parameters.Add("@BojaID", OleDbType.Numeric).Value = Int32.Parse(tbSifra.Text);
+                cmd.Parameters.Add("@Naziv", OleDbType.VarChar).Value = tbNaziv.Text;
+                if (tbOpis.Text == "")
+                    cmd.Parameters.Add("@OpisID", OleDbType.VarChar).Value = DBNull.Value;
+                else
+                    cmd.Parameters.Add("@OpisID", OleDbType.VarChar).Value = tbOpis.Text;
+                con.Open();
+                try
+                {
+                    cmd.ExecuteNonQuery();
+                    MessageBox.Show("Uspesan upis!", "Obavestenje", MessageBoxButtons.OK);
+                    proslo = true;
+                }
+                catch
+                {
+                    MessageBox.Show("Doslo je do greske pri upisivanju u bazu!", "Greska", MessageBoxButtons.OK);
+                }
+                con.Close();
+                if (proslo)
+                {
+                    listView1.Items.Clear();
+                    PopuniLV();
+                }
+                tbNaziv.Text = "";
+                tbSifra.Text = "";
+                tbOpis.Text = "";
+            }
+            else
+                MessageBox.Show("Popunite sva obavezna polja!", "Greska", MessageBoxButtons.OK);
+
+
+       
+	   //deleting data from the database
+            bool proslo = false;
+            int id = Int32.Parse(tbSifra.Text);
+            cmd = new OleDbCommand("DELETE FROM BOJA WHERE BojaID=" + id + ";", con);
+            con.Open();
+            try
+            {
+                cmd.ExecuteNonQuery();
+                MessageBox.Show("Uspesno brisanje!", "Obavestenje", MessageBoxButtons.OK);
+                proslo = true;
+            }
+            catch
+            {
+                MessageBox.Show("Doslo je do greske pri brisanju iz baze!", "Greska", MessageBoxButtons.OK);
+            }
+            con.Close();
+            if (proslo)
+            {
+                listView1.Items.Clear();
+                PopuniLV();
+            }
+            tbNaziv.Text = "";
+            tbSifra.Text = "";
+            tbOpis.Text = "";
+        }
+
+     
+		//database update in database
+		
+            bool proslo=false;
+            if (tbNaziv.Text == "")
+            {
+                MessageBox.Show("Naziv je obavezno polje!", "Obavestenje");
+            }
+            else
+            {
+                cmd = new OleDbCommand("UPDATE BOJA SET Naziv=@Naziv, Opis=@Opis WHERE BojaID=" + Int32.Parse(tbSifra.Text), con);
+                    cmd.Parameters.Add("@Naziv", OleDbType.VarChar).Value = tbNaziv.Text;
+                if (tbOpis.Text != "")
+                    cmd.Parameters.Add("@Opis", OleDbType.VarChar).Value = tbOpis.Text;
+
+                else
+                    cmd.Parameters.Add("@Opis", OleDbType.VarChar).Value = DBNull.Value;
+                con.Open();
+                try
+                {
+                    cmd.ExecuteNonQuery();
+                    MessageBox.Show("Uspesna izmena!", "Obavestenje", MessageBoxButtons.OK);
+                    proslo = true;
+                }
+                catch
+                {
+                    MessageBox.Show("Doslo je do greske pri izmeni podataka!", "Greska", MessageBoxButtons.OK);
+                }
+                finally
+                {
+                    con.Close();
+                    if (proslo)
+                    {
+                        listView1.Items.Clear();
+                        PopuniLV();
+                    }
+                    tbNaziv.Text = "";
+                    tbSifra.Text = "";
+                    tbOpis.Text = "";
+                }
+            }
+
+  
