@@ -5,6 +5,7 @@
 5. Popuna combobox-a sa nazivom kada je u bazi upisan ID
 6. Upis ID-a u bazu kada je u Combobox-u ispisan naziv
 7. Upis ID-a u bazu kada je u Combobox-u ispisan naziv (SORTIRANO)
+8. Popuna GridView-a
 
 
 
@@ -168,3 +169,25 @@ if(textBox4.Text!="")
 					komanda.Parameters.AddWithValue("@nzv", textBox2.Text);
 					komanda.AddWithValue("@gradID", gradID.ToString());
 
+
+8. Popuna GridView-a
+con.Open();
+                rider=cmd.ExecuteReader();
+                if (rider.HasRows)
+                {
+                    int i = 0;
+                    
+                    while (rider.Read())
+                    {
+                        DataGridViewRow row = (DataGridViewRow)dataGridView1.Rows[i].Clone();
+                        row.Cells[0].Value = rider[0].ToString();
+                        row.Cells[1].Value = rider[1].ToString();
+                        dataGridView1.Rows.Add(row);
+                        i++;
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Nema poklapanja!", "Obavestenje!");
+                }
+                con.Close();
