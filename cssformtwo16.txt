@@ -1,0 +1,88 @@
+using System.Data.OleDb;
+using System.Windows.Forms.DataVisualization.Charting;
+
+		OleDbConnection con;
+        OleDbCommand cmd;
+        OleDbDataReader rider;
+        string series = "Citaoci";
+		
+		//relative paths of base linking
+			string putanja = Environment.CurrentDirectory;
+            string[] putanjaBaze = putanja.Split(new string[] { "bin" }, StringSplitOptions.None);
+            AppDomain.CurrentDomain.SetData("DataDirectory", putanjaBaze[0]);
+            con = new OleDbConnection(@"Provider=Microsoft.Jet.OLEDB.4.0;Data Source=|DataDirectory|\SkolskaBiblioteka.mdb");
+       
+	   //drawing data in database
+	   
+		cmd = new OleDbCommand("SELECT CitalacID, Ime, Prezime FROM Citalac ORDER BY CitalacID ASC;", con);
+            con.Open();
+            rider=cmd.ExecuteReader();
+            while(rider.Read())
+            {
+                cbCit.Items.Add(rider[0].ToString()+" - "+rider[1].ToString()+' '+rider[2].ToString());
+            }
+            con.Close();
+            cbCit.Text = "Izaberite citaoca:";
+
+            chart1.Series.Clear();
+            chart1.Legends.Clear();
+           
+            chart1.Series.Add(series);
+            chart1.Series[series].ChartType = SeriesChartType.FastLine;
+            chart1.ChartAreas[0].AxisX.Minimum = 0;
+            chart1.ChartAreas[0].AxisX.Maximum = 12;
+            chart1.ChartAreas[0].AxisX.Interval = 2;
+            chart1.ChartAreas[0].AxisY.Minimum = 0;
+            chart1.ChartAreas[0].AxisY.Maximum = 6;
+            chart1.ChartAreas[0].AxisY.Interval = 1;
+            chart1.ChartAreas[0].AxisX.CustomLabels.Add(1.5, 2.5, "Februar");
+            chart1.ChartAreas[0].AxisX.CustomLabels.Add(3.5, 4.5, "April");
+            chart1.ChartAreas[0].AxisX.CustomLabels.Add(5.5, 6.5, "Jun");
+            chart1.ChartAreas[0].AxisX.CustomLabels.Add(7.5, 8.5, "Avgust");
+            chart1.ChartAreas[0].AxisX.CustomLabels.Add(9.5, 10.5, "Oktobar");
+            chart1.ChartAreas[0].AxisX.CustomLabels.Add(11.5, 12.5, "Decembar");
+ 
+		//show data 
+		 if(cbCit.Text == "Izaberite citaoca:")
+            {
+                MessageBox.Show("Izaberite citaoca!", "Obavestenje!");
+                return;
+            }
+            int godina;
+            try
+            {
+                godina = Int32.Parse(tbGod.Text);
+            }
+            catch
+            {
+                MessageBox.Show("Godina mora biti broj!", "Greska!");
+                tbGod.Text = "";
+                return;
+            }
+            if (godina < DateTime.Now.Year-100 || godina > DateTime.Now.Year)
+            {
+                MessageBox.Show("Godina mora biti u prethodnih 100!", "Greska!");
+                tbGod.Text = "";
+                return;
+            }
+            
+            string[] splitter=new string[5];
+            int id;
+            splitter = cbCit.Text.Split(' ');
+            id = Int32.Parse(splitter[0]);
+            DataPoint point;
+            double y;
+            for (int i = 1; i <=12; i++)
+            {
+                cmd = new OleDbCommand("SELECT COUNT(*) FROM Na_citanju WHERE CitalacID=@CitalacID AND year(DatUz)=@year AND month(DatUz)=@month", con);
+                cmd.Parameters.AddWithValue("@CitalacID", id);
+                cmd.Parameters.AddWithValue("@year", godina);
+                cmd.Parameters.AddWithValue("@month", i);
+                con.Open();
+                rider = cmd.ExecuteReader();
+                rider.Read();
+                y = double.Parse(rider[0].ToString());
+                point = new DataPoint(i, y);
+                chart1.Series[series].Points.Add(point);
+                con.Close();
+            }
